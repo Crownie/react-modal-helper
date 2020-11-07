@@ -126,7 +126,7 @@ const Modal: FunctionComponent<ModalProps> = ({id, renderModal, children}) => {
 };
 
 export function createModalHelper(renderModal: RenderModal) {
-  function modal<T extends FunctionComponent>(
+  function modal<T extends FunctionComponent<Parameters<T>[0]>>(
     Component: T,
     props: Parameters<typeof Component>[0] = {},
   ): ModalHandle {
