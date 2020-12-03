@@ -8,6 +8,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import {Subject} from 'rxjs/internal/Subject';
 
 interface ModalProviderProps {
   children?: any;
@@ -27,6 +28,7 @@ type ModalHandler = (
 
 interface ModalHandle {
   close: () => void;
+  onCloseObserver: Subject<void>;
 }
 
 let modalHandler: any = null;
@@ -98,12 +100,17 @@ export const useModalHandle = (): ModalHandle => {
 };
 
 const Modal: FunctionComponent<ModalProps> = ({id, renderModal, children}) => {
+  // create a Subject that can be subscribed to to receive the onclose event
+  const onCloseObserver = useMemo(() => new Subject<void>(), []);
+
   const [isOpen, setOpen] = useState(true);
   const handleClose = useCallback(() => {
     setOpen(false);
-  }, []);
+    // this will notify the subscribers whether modal is closed directly or by clicking outside
+    onCloseObserver.next();
+  }, [onCloseObserver]);
 
-  const modalHandle = {close: handleClose};
+  const modalHandle:ModalHandle = {close: handleClose,onCloseObserver};
 
   useEffect(() => {
     const c = components.get(id);
@@ -116,7 +123,10 @@ const Modal: FunctionComponent<ModalProps> = ({id, renderModal, children}) => {
         components.delete(id);
       }, 1000);
     }
-  }, [isOpen, modalHandle]);
+    return ()=>{
+      onCloseObserver.unsubscribe()
+    }
+  }, [isOpen, modalHandle,onCloseObserver]);
 
   return (
     <ModalHandleContext.Provider value={modalHandle}>
