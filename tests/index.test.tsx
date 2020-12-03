@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {fireEvent, render, screen, waitFor} from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import {createModalHelper, ModalProvider, useModalHandle} from '../src';
@@ -19,7 +19,15 @@ const modal = createModalHelper(({isOpen, children}) => (
 ));
 
 const ModalComponent = () => {
-  const {close} = useModalHandle();
+  const {close,onCloseObserver} = useModalHandle();
+  useEffect(()=>{
+    const sub = onCloseObserver.subscribe(()=>{
+      console.log('ON CLOSE!');
+    });
+    return ()=>{
+      sub.unsubscribe();
+    }
+  },[]);
   return (
     <div data-testid="modal-component">
       <h1 data-testid="modal-title">Hello Modal!</h1>
