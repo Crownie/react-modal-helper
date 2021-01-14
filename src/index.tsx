@@ -14,7 +14,7 @@ interface ModalProviderProps {
   children?: any;
 }
 
-enum CloseMethod {
+export enum CloseMethod {
   NORMAL = 'normal',
   BACKDROP = 'backdrop',
 }
@@ -31,7 +31,7 @@ type ModalHandler = (
   renderModal: RenderModal,
 ) => void;
 
-interface ModalHandle {
+export interface ModalHandle {
   close: (method?: CloseMethod) => void;
   onCloseObserver: Subject<CloseMethod>;
 }
