@@ -134,9 +134,6 @@ const Modal: FunctionComponent<ModalProps> = ({id, renderModal, children}) => {
         components.delete(id);
       }, 1000);
     }
-    return () => {
-      onCloseObserver.unsubscribe();
-    };
   }, [isOpen, modalHandle, onCloseObserver]);
 
   return (
