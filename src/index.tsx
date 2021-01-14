@@ -14,9 +14,14 @@ interface ModalProviderProps {
   children?: any;
 }
 
+enum CloseMethod {
+  NORMAL = 'normal',
+  BACKDROP = 'backdrop',
+}
+
 type RenderModal = (props: {
   isOpen: boolean;
-  close: () => void;
+  close: (method?: CloseMethod) => void;
   children: ReactNode;
 }) => ReactNode;
 
@@ -27,8 +32,8 @@ type ModalHandler = (
 ) => void;
 
 interface ModalHandle {
-  close: () => void;
-  onCloseObserver: Subject<void>;
+  close: (method?: CloseMethod) => void;
+  onCloseObserver: Subject<CloseMethod>;
 }
 
 let modalHandler: any = null;
@@ -56,10 +61,10 @@ export function ModalProvider({children}: ModalProviderProps) {
     components.set(id, {id, Component, props, renderModal});
     setState(id);
     return {
-      close: () => {
+      close: (method) => {
         const c = components.get(id);
         if (c && c.modalHandle) {
-          c.modalHandle.close();
+          c.modalHandle.close(method);
         } else {
           console.warn('modal is not ready or has already been unmounted');
         }
@@ -101,16 +106,22 @@ export const useModalHandle = (): ModalHandle => {
 
 const Modal: FunctionComponent<ModalProps> = ({id, renderModal, children}) => {
   // create a Subject that can be subscribed to to receive the onclose event
-  const onCloseObserver = useMemo(() => new Subject<void>(), []);
+  const onCloseObserver = useMemo(() => new Subject<CloseMethod>(), []);
 
   const [isOpen, setOpen] = useState(true);
-  const handleClose = useCallback(() => {
-    setOpen(false);
-    // this will notify the subscribers whether modal is closed directly or by clicking outside
-    onCloseObserver.next();
-  }, [onCloseObserver]);
+  const handleClose = useCallback(
+    (method: CloseMethod = CloseMethod.NORMAL) => {
+      if (method === CloseMethod.NORMAL) {
+        // close only if is 'normal close', other methods will be handled by the onCloseObserver subscribers
+        setOpen(false);
+      }
+      // this will notify the subscribers whether modal is closed directly or by clicking outside
+      onCloseObserver.next(method);
+    },
+    [onCloseObserver],
+  );
 
-  const modalHandle:ModalHandle = {close: handleClose,onCloseObserver};
+  const modalHandle: ModalHandle = {close: handleClose, onCloseObserver};
 
   useEffect(() => {
     const c = components.get(id);
@@ -123,10 +134,10 @@ const Modal: FunctionComponent<ModalProps> = ({id, renderModal, children}) => {
         components.delete(id);
       }, 1000);
     }
-    return ()=>{
-      onCloseObserver.unsubscribe()
-    }
-  }, [isOpen, modalHandle,onCloseObserver]);
+    return () => {
+      onCloseObserver.unsubscribe();
+    };
+  }, [isOpen, modalHandle, onCloseObserver]);
 
   return (
     <ModalHandleContext.Provider value={modalHandle}>
