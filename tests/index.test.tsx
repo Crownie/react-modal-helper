@@ -19,19 +19,24 @@ const modal = createModalHelper(({isOpen, children}) => (
 ));
 
 const ModalComponent = () => {
-  const {close,onCloseObserver} = useModalHandle();
-  useEffect(()=>{
-    const sub = onCloseObserver.subscribe(()=>{
+  const {close, onCloseObserver} = useModalHandle();
+  useEffect(() => {
+    const sub = onCloseObserver.subscribe(() => {
       console.log('ON CLOSE!');
     });
-    return ()=>{
+    return () => {
       sub.unsubscribe();
-    }
-  },[]);
+    };
+  }, []);
   return (
     <div data-testid="modal-component">
       <h1 data-testid="modal-title">Hello Modal!</h1>
-      <button data-testid="dismiss-button" onClick={close}>
+      <button
+        data-testid="dismiss-button"
+        onClick={() => {
+          close();
+        }}
+      >
         Dismiss
       </button>
     </div>
