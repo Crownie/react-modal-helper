@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {Subject} from 'rxjs/internal/Subject';
@@ -38,7 +39,7 @@ export interface ModalHandle {
 
 let modalHandler: any = null;
 
-const components: Map<
+type ComponentsMap = Map<
   string,
   {
     id: string;
@@ -47,10 +48,13 @@ const components: Map<
     renderModal: RenderModal;
     modalHandle?: ModalHandle;
   }
-> = new Map();
+>;
 
 export function ModalProvider({children}: ModalProviderProps) {
   const [currentId, setState] = React.useState<string>();
+
+  /* a map of all opened modals*/
+  const components: ComponentsMap = useRef(new Map()).current;
 
   const handler: ModalHandler = (
     Component: FunctionComponent,
@@ -81,7 +85,12 @@ export function ModalProvider({children}: ModalProviderProps) {
         {Array.from(components.values()).map(
           ({id, Component, props, renderModal}) => {
             return (
-              <Modal key={id} id={id} renderModal={renderModal}>
+              <Modal
+                key={id}
+                id={id}
+                components={components}
+                renderModal={renderModal}
+              >
                 <Component {...props} />
               </Modal>
             );
@@ -96,6 +105,7 @@ export function ModalProvider({children}: ModalProviderProps) {
 interface ModalProps {
   id: string;
   renderModal: RenderModal;
+  components: ComponentsMap;
 }
 
 const ModalHandleContext = createContext<ModalHandle>({} as any);
@@ -104,7 +114,12 @@ export const useModalHandle = (): ModalHandle => {
   return useContext(ModalHandleContext);
 };
 
-const Modal: FunctionComponent<ModalProps> = ({id, renderModal, children}) => {
+const Modal: FunctionComponent<ModalProps> = ({
+  id,
+  components,
+  renderModal,
+  children,
+}) => {
   // create a Subject that can be subscribed to to receive the onclose event
   const onCloseObserver = useMemo(() => new Subject<CloseMethod>(), []);
 
