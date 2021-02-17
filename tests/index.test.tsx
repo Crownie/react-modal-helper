@@ -9,7 +9,7 @@ import {
   useModal,
   useModalContext,
 } from '../src';
-import {ExampleModalWrapper} from './ExampleModalWrapper';
+import {ExampleModalAdapter} from './ExampleModalAdapter';
 
 const App = () => {
   return <MyComponent />;
@@ -39,7 +39,7 @@ const ModalComponent = () => {
 };
 
 const MyComponent = () => {
-  const {ModalRenderer, open} = useModal(ExampleModalWrapper);
+  const {ModalRenderer, open} = useModal(ExampleModalAdapter);
   const modalHandle = useRef<any>(null);
   const onShowClick = () => {
     modalHandle.current = open(<ModalComponent />);

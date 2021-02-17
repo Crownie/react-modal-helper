@@ -1,6 +1,6 @@
 import React, {FunctionComponent, useEffect, useRef} from 'react';
 import {
-  IModalWrapper,
+  ModalAdapter,
   ModalCallbacks,
   ModalHandle,
   TriggerType,
@@ -8,7 +8,7 @@ import {
   useModalContext,
 } from './index';
 
-const ModalWrapper: IModalWrapper = ({children, isOpen}) => {
+const ModalWrapper: ModalAdapter = ({children, isOpen}) => {
   return <>{isOpen && children}</>;
 };
 

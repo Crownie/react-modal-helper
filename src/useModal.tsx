@@ -14,7 +14,7 @@ import {ModalContext, ModalContextProps} from './useModalContext';
 interface ModalItem {
   id: string;
   node: ReactNode;
-  ModalWrapper: IModalWrapper;
+  ModalAdapterComp: ModalAdapter;
   modalHandle?: ModalHandle;
   cleanup?: boolean;
 }
@@ -25,7 +25,7 @@ const ModalComp: FunctionComponent<{
   modal: ModalItem;
   modalsMap: ModalsMap;
 }> = ({modal, modalsMap}) => {
-  const {id, ModalWrapper} = modal;
+  const {id, ModalAdapterComp} = modal;
   const [isOpen, setOpen] = useState(true);
   const ref = useRef<ModalCallbacks>(null);
 
@@ -64,9 +64,9 @@ const ModalComp: FunctionComponent<{
   return (
     <ModalContext.Provider value={{isOpen, close, ref}}>
       {
-        <ModalWrapper isOpen={isOpen} close={close}>
+        <ModalAdapterComp isOpen={isOpen} close={close}>
           {modal.node}
-        </ModalWrapper>
+        </ModalAdapterComp>
       }
     </ModalContext.Provider>
   );
@@ -74,16 +74,16 @@ const ModalComp: FunctionComponent<{
 
 interface ModalWrapperProps extends Omit<ModalContextProps, 'ref'> {}
 
-export type IModalWrapper = FunctionComponent<ModalWrapperProps>;
+export type ModalAdapter = FunctionComponent<ModalWrapperProps>;
 
-export const useModal = (ModalWrapper: IModalWrapper) => {
+export const useModal = (ModalAdapterComp: ModalAdapter) => {
   const modalsMap: ModalsMap = useRef(new Map()).current;
   const [currentId, setState] = React.useState<string>();
 
   const open = useCallback(
     (node: ReactNode): ModalHandle => {
       const id = new Date().toISOString() + '' + Math.random();
-      modalsMap.set(id, {id, node, ModalWrapper});
+      modalsMap.set(id, {id, node, ModalAdapterComp: ModalAdapterComp});
       setState(id);
       return {
         close: (triggerType?: TriggerType) => {
