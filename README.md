@@ -17,41 +17,46 @@ npm install --save react-modal-helper
 
    ```tsx
    import React, {Component} from 'react';
-   import {createModalHelper} from 'react-modal-helper';
+   import {createModalAdapter} from 'react-modal-helper';
    import Modal from 'react-modal'; //<-- using react-modal here but you could use any modal component of your choice
 
-   // create the helper and export it. it will be used later
-   export const modal = createModalHelper(({isOpen, children}) => (
+   // create an adapter to render any modal implementation of your choice
+   export const ModalAdapter = createModalAdapter(({isOpen, children}) => (
      <Modal isOpen={isOpen} ariaHideApp={false}>
        {children}
      </Modal>
    ));
    ```
 
-2. Wrap your app with ModalProvider
+2. use the `useModal` hook
+   call the `open()` with any component to render it as modal.
+   Render the ModalRenderer component to allow it to be displayed
 
    ```tsx
    import React, {Component} from 'react';
-   import {ModalProvider} from 'react-modal-helper';
+   import {useModal} from 'react-modal-helper';
+   const App = () => {
+     const {ModalRenderer, open} = useModal(ModalAdapter);
 
-   // create the helper
-   <ModalProvider>
-     <App />
-   </ModalProvider>;
+     const onClick = () => {
+       open(<AnyComponent />);
+     };
+
+     return (
+       <>
+         <ModalRenderer />
+       </>
+     );
+   };
    ```
 
-3. use the modal helper you created in step 1
-   ```tsx
-   // it takes the component you want to render as first argument and its props as second arg
-   modal(MyComponent, {someProp: 'some prop value'});
-   ```
-4. Closing the modal. Get access to the modal context using useModalHandle hook
+3. Closing the modal. Get access to the modal context using `useModalContext` hook
 
    ```tsx
-   import {useModalHandle} from 'react-modal-helper'
+   import {useModalContext} from 'react-modal-helper'
 
    const MyComponent = ()=>{
-       const {close} = useModalHandle();
+       const {close} = useModalContext();
 
        ...
        // call the close
@@ -62,10 +67,32 @@ npm install --save react-modal-helper
    }
    ```
 
-   Alternatively, the `modal()` helper function returns the modalHandle
+   Alternatively, the `open()` function from `useModal()` returns the modalHandle
 
    ```tsx
-   const {close} = modal(MyComponent, {someProp: 'some prop value'});
+   const {close} = open(<MyComponent />);
+   ```
+
+4. Modifying close behaviour. E.g. asking user to confirm before close
+
+   ```tsx
+   import {useModalContext} from 'react-modal-helper' import {useCallback} from 'react';
+
+   const MyComponent = ()=>{
+      const onBeforeClose = useCallback((event, forceClose)=>{
+        event.preventDefault();
+        if(confirm("Are you sure?")){
+          forceClose();
+        }
+      });
+       const {close} = useModalContext({onBeforeClose});
+
+       const onClick = ()=>{
+          close();
+       }
+
+       return <div>My component <button onClick={onClick}>Close!</button></div>
+   }
    ```
 
 ## License
