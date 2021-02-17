@@ -1,0 +1,3 @@
+- `npm version 2.0.0-beta.0` 2.0.0-beta.1, 2.1.0-beta.0
+- Run `npm publish --tag next` to publish the package under the `next` tag
+- Run `npm install --save package@next` to install prerelease package
