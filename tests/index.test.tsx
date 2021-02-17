@@ -1,33 +1,28 @@
-import React, {useEffect} from 'react';
-import {fireEvent, render, screen, waitFor} from '@testing-library/react';
+import React, {useCallback, useRef} from 'react';
+import {fireEvent, render, waitFor} from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
-import {createModalHelper, ModalProvider, useModalHandle} from '../src';
-import Modal from 'react-modal';
+import {
+  CloseModalEvent,
+  ModalTester,
+  ModalTesterIds,
+  TriggerType,
+  useModal,
+  useModalContext,
+} from '../src';
+import {ExampleModalWrapper} from './ExampleModalWrapper';
 
 const App = () => {
-  return (
-    <ModalProvider>
-      <MyComponent />
-    </ModalProvider>
-  );
+  return <MyComponent />;
 };
 
-const modal = createModalHelper(({isOpen, children}) => (
-  <Modal isOpen={isOpen} ariaHideApp={false}>
-    {children}
-  </Modal>
-));
-
 const ModalComponent = () => {
-  const {close, onCloseObserver} = useModalHandle();
-  useEffect(() => {
-    const sub = onCloseObserver.subscribe(() => {
-      console.log('ON CLOSE!');
-    });
-    return () => {
-      sub.unsubscribe();
-    };
+  const onBeforeClose = useCallback((event: CloseModalEvent, forceClose) => {
+    event.preventDefault();
+    forceClose();
   }, []);
+
+  const {close} = useModalContext({onBeforeClose});
+
   return (
     <div data-testid="modal-component">
       <h1 data-testid="modal-title">Hello Modal!</h1>
@@ -44,17 +39,19 @@ const ModalComponent = () => {
 };
 
 const MyComponent = () => {
-  let modalHandle;
+  const {ModalRenderer, open} = useModal(ExampleModalWrapper);
+  const modalHandle = useRef<any>(null);
   const onShowClick = () => {
-    modalHandle = modal(ModalComponent);
+    modalHandle.current = open(<ModalComponent />);
   };
 
   const onCloseClick = () => {
-    modalHandle.close();
+    modalHandle.current.close();
   };
 
   return (
     <>
+      <ModalRenderer />
       <button data-testid="show-button" onClick={onShowClick}>
         Show
       </button>
@@ -65,22 +62,69 @@ const MyComponent = () => {
   );
 };
 
-beforeAll(() => {
-  render(<App />);
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  jest.runOnlyPendingTimers();
+  jest.useRealTimers();
 });
 
 it('opens and closes', async () => {
-  fireEvent.click(screen.getByTestId('show-button'));
-  await waitFor(() => screen.queryByTestId('modal-component'));
-  expect(screen.getByTestId('modal-title')).toHaveTextContent('Hello Modal!');
-  await waitFor(() => screen.getByRole('dialog'));
-  fireEvent.click(screen.getByTestId('dismiss-button'));
-  expect(screen.queryByTestId('modal-component')).toBeNull();
+  const {getByTestId, queryByTestId, getByRole} = render(<App />);
+  fireEvent.click(getByTestId('show-button'));
+  await waitFor(() => queryByTestId('modal-component'));
+  expect(getByTestId('modal-title')).toHaveTextContent('Hello Modal!');
+  await waitFor(() => getByRole('dialog'));
+  fireEvent.click(getByTestId('dismiss-button'));
+  expect(queryByTestId('modal-component')).toBeNull();
+  // screen.debug()
+  fireEvent.click(getByTestId('show-button'));
+  await waitFor(() => queryByTestId('modal-component'));
+  expect(getByTestId('modal-title')).toHaveTextContent('Hello Modal!');
+  await waitFor(() => getByRole('dialog'));
+  fireEvent.click(getByTestId('close-button'));
+  expect(queryByTestId('modal-component')).toBeNull();
+});
 
-  fireEvent.click(screen.getByTestId('show-button'));
-  await waitFor(() => screen.queryByTestId('modal-component'));
-  expect(screen.getByTestId('modal-title')).toHaveTextContent('Hello Modal!');
-  await waitFor(() => screen.getByRole('dialog'));
-  fireEvent.click(screen.getByTestId('close-button'));
-  expect(screen.queryByTestId('modal-component')).toBeNull();
+it('modal tester renders correctly', () => {
+  const {container} = render(
+    <ModalTester>
+      <h1>Hello Modal Tester!</h1>
+    </ModalTester>,
+  );
+  expect(container).toMatchSnapshot();
+});
+
+it('prevent default close', async () => {
+  const onBeforeClose = (event: CloseModalEvent, forceClose) => {
+    if (
+      event.triggerType === TriggerType.CLICK_OUTSIDE ||
+      event.triggerType === TriggerType.ESC
+    ) {
+      event.preventDefault();
+    } else {
+      forceClose();
+    }
+  };
+  const {getByTestId, queryByTestId} = render(
+    <ModalTester callbacks={{onBeforeClose}}>
+      <h1>Hello Modal Tester!</h1>
+    </ModalTester>,
+  );
+  await waitFor(() => queryByTestId(ModalTesterIds.MODAL_TESTER));
+
+  fireEvent.click(getByTestId(ModalTesterIds.ESC_BUTTON));
+  fireEvent.click(getByTestId(ModalTesterIds.CLICK_OUTSIDE_BUTTON));
+  expect(queryByTestId(ModalTesterIds.MODAL_TESTER)).not.toBeNull();
+  fireEvent.click(getByTestId(ModalTesterIds.CLOSE_BUTTON));
+  expect(queryByTestId(ModalTesterIds.MODAL_TESTER)).toBeNull();
+});
+
+it('runs forceClose', async () => {
+  const {getByTestId, queryByTestId} = render(<ModalTester>dummy</ModalTester>);
+  await waitFor(() => queryByTestId(ModalTesterIds.MODAL_TESTER));
+  fireEvent.click(getByTestId(ModalTesterIds.FORCE_CLOSE_BUTTON));
+  expect(queryByTestId(ModalTesterIds.MODAL_TESTER)).toBeNull();
 });
