@@ -17,6 +17,7 @@ interface ModalItem {
   ModalAdapterComp: ModalAdapter;
   modalHandle?: ModalHandle;
   cleanup?: boolean;
+  options?: any;
 }
 
 type ModalsMap = Map<string, ModalItem>;
@@ -64,7 +65,7 @@ const ModalComp: FunctionComponent<{
   return (
     <ModalContext.Provider value={{isOpen, close, ref}}>
       {
-        <ModalAdapterComp isOpen={isOpen} close={close}>
+        <ModalAdapterComp isOpen={isOpen} close={close} options={modal.options}>
           {modal.node}
         </ModalAdapterComp>
       }
@@ -74,16 +75,23 @@ const ModalComp: FunctionComponent<{
 
 interface ModalWrapperProps extends Omit<ModalContextProps, 'ref'> {}
 
-export type ModalAdapter = FunctionComponent<ModalWrapperProps>;
+export type ModalAdapter<T = any> = FunctionComponent<
+  ModalWrapperProps & {options?: T}
+>;
 
-export const useModal = (ModalAdapterComp: ModalAdapter) => {
+export function useModal<T>(ModalAdapterComp: ModalAdapter<T>) {
   const modalsMap: ModalsMap = useRef(new Map()).current;
   const [currentId, setState] = React.useState<string>();
 
   const open = useCallback(
-    (node: ReactNode): ModalHandle => {
+    (node: ReactNode, options?: T): ModalHandle => {
       const id = new Date().toISOString() + '' + Math.random();
-      modalsMap.set(id, {id, node, ModalAdapterComp: ModalAdapterComp});
+      modalsMap.set(id, {
+        id,
+        node,
+        ModalAdapterComp: ModalAdapterComp,
+        options,
+      });
       setState(id);
       return {
         close: (triggerType?: TriggerType) => {
@@ -119,4 +127,4 @@ export const useModal = (ModalAdapterComp: ModalAdapter) => {
   }, [currentId, modalsMap.size]);
 
   return {ModalRenderer, open};
-};
+}
