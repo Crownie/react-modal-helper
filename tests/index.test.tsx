@@ -42,7 +42,7 @@ const MyComponent = () => {
   const {ModalRenderer, open} = useModal(ExampleModalAdapter);
   const modalHandle = useRef<any>(null);
   const onShowClick = () => {
-    modalHandle.current = open(<ModalComponent />);
+    modalHandle.current = open(<ModalComponent />, {type: 'example-type'});
   };
 
   const onCloseClick = () => {
