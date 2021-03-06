@@ -1,7 +1,7 @@
 import {ModalAdapter} from './useModal';
 
-export const createModalAdapter = (fn: ModalAdapter): ModalAdapter => {
+export function createModalAdapter<T>(fn: ModalAdapter<T>): ModalAdapter<T> {
   return (props) => {
     return fn(props);
   };
-};
+}
