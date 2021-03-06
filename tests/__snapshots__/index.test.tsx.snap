@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`modal tester renders correctly 1`] = `
+<div>
+  <div
+    data-testid="modal-tester"
+  >
+    <h1>
+      Hello Modal Tester!
+    </h1>
+    <button
+      data-testid="close-button"
+    />
+    <button
+      data-testid="click-outside-button"
+    />
+    <button
+      data-testid="esc-button"
+    />
+  </div>
+  <button
+    data-testid="force-close-button"
+  />
+</div>
+`;
